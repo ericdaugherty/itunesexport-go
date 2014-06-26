@@ -17,6 +17,7 @@ type Library struct {
 	LibraryPersistentId string `plist:"Library Persistent ID"`
 	Tracks              map[string]Track
 	Playlists           []Playlist
+	PlaylistMap         map[string]Playlist
 }
 
 type Track struct {
@@ -57,6 +58,7 @@ type Playlist struct {
 	Master               bool
 	PlaylistId           int    `plist:"Playlist ID"`
 	PlaylistPersistentId string `plist:"Playlist Persistent ID"`
+	DistinguishedKind    int    `plist:"Distinguished Kind"`
 	Visible              bool
 	AllItems             bool           `plist:"All Items"`
 	SmartInfo            []byte         `plist:"Smart Info"`
@@ -88,6 +90,11 @@ func LoadLibrary(fileLocation string) (returnLibrary *Library, err error) {
 	if decodeErr != nil {
 		err = decodeErr
 		return
+	}
+
+	library.PlaylistMap = make(map[string]Playlist)
+	for _, value := range library.Playlists {
+		library.PlaylistMap[value.Name] = value
 	}
 
 	return &library, err

@@ -6,5 +6,4 @@ This is a port of the previous Scala version, found here: https://code.google.co
 
 ##Usage##
 
-itunesexport -library <path to .xml file>
-
+itunesexport -library < path to .xml file >
