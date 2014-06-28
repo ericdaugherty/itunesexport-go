@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -10,12 +11,20 @@ import (
 	"time"
 )
 
+const (
+	M3U = iota
+	EXT
+	WPL
+	ZPL
+)
+
 type playlistWriter func(io.Writer, *ExportSettings, *Playlist) error
 type trackWriter func(io.Writer, *ExportSettings, *Playlist, *Track, string) error
 
 type ExportSettings struct {
 	Library    *Library
 	Playlists  []Playlist
+	ExportType int
 	OutputPath string
 	Extension  string
 }
@@ -33,7 +42,17 @@ func ExportPlaylists(exportSettings *ExportSettings) error {
 			return err
 		}
 
-		header, entry, footer := m3uPlaylistWriters()
+		var header playlistWriter
+		var entry trackWriter
+		var footer playlistWriter
+		switch exportSettings.ExportType {
+		case M3U:
+			header, entry, footer = m3uPlaylistWriters()
+		case EXT:
+			header, entry, footer = extPlaylistWriters()
+		default:
+			return errors.New("Export Type Not Implemented")
+		}
 
 		// Write out the Header
 		err = header(file, exportSettings, &playlist)
@@ -84,6 +103,28 @@ func m3uPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 
 	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
 		_, err := w.Write([]byte(fmt.Sprintf(entryString, fileLocation)))
+		return err
+	}
+
+	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+		return nil
+	}
+
+	return
+}
+
+func extPlaylistWriters() (header playlistWriter, entry trackWriter, footer playlistWriter) {
+
+	const headerString = "#EXTM3U\n"
+	const entryString = "#EXTINF:%v,%v - %v\n%v\n"
+
+	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+		_, err := w.Write([]byte(fmt.Sprintf(headerString)))
+		return err
+	}
+
+	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+		_, err := w.Write([]byte(fmt.Sprintf(entryString, track.TotalTime/1000, track.Artist, track.Name, fileLocation)))
 		return err
 	}
 

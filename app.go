@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -13,7 +15,9 @@ const (
 	
 Flags:
     -library <file path>        Path to iTunes Music Libary XML File.
-	-output <file path>         Path where the playlists should be written.
+    -output <file path>         Path where the playlists should be written.
+    -type <M3U|EXT|WPL|ZPL>     Type of playlist file to write.  Defaults to M3U
+                                EXT = M3U Extended, WPL = Windows Playlist, ZPL = Zune Playlist
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
 
@@ -35,6 +39,7 @@ var (
 
 	libraryPath                    string
 	outputPath                     string
+	exportType                     string
 	includeAllPlaylists            bool
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
@@ -51,6 +56,7 @@ func main() {
 
 	flags.StringVar(&libraryPath, "library", "", "")
 	flags.StringVar(&outputPath, "output", "", "")
+	flags.StringVar(&exportType, "type", "M3U", "")
 	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "")
 	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "")
 
@@ -58,6 +64,12 @@ func main() {
 	if err != nil {
 		commandLineError = true
 		commandLineErrorMessage = err.Error()
+	}
+
+	err = parseExportType()
+	if err != nil {
+		commandLineError = true
+		commandLineErrorMessage = fmt.Sprintf("%v\n", err.Error())
 	}
 
 	var mode = ModeUnknown
@@ -80,6 +92,7 @@ func main() {
 	if commandLineError {
 		fmt.Printf(UsageMessage, "itunesexport")
 		fmt.Printf(UsageErrorMessage, commandLineErrorMessage)
+		return
 	}
 
 	if libraryPath == "" {
@@ -101,7 +114,26 @@ func main() {
 	exportSettings.Extension = "m3u"
 
 	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
-	ExportPlaylists(&exportSettings)
+	err = ExportPlaylists(&exportSettings)
+	if err != nil {
+		fmt.Printf("Error Exporting Playlist: %v\n", err.Error())
+	}
+}
+
+func parseExportType() error {
+	switch strings.ToUpper(exportType) {
+	case "M3U":
+		exportSettings.ExportType = M3U
+	case "EXT":
+		exportSettings.ExportType = EXT
+	case "WPL":
+		exportSettings.ExportType = WPL
+	case "ZPL":
+		exportSettings.ExportType = ZPL
+	default:
+		return errors.New("Unknown Export Type: " + exportType)
+	}
+	return nil
 }
 
 func parsePlaylists(library *Library) (playlists []Playlist) {
