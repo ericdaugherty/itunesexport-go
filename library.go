@@ -3,6 +3,7 @@ package main
 import (
 	plist "github.com/DHowett/go-plist"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -98,4 +99,14 @@ func LoadLibrary(fileLocation string) (returnLibrary *Library, err error) {
 	}
 
 	return &library, err
+}
+
+func (playlist *Playlist) Tracks(library *Library) (tracks []Track) {
+	for _, item := range playlist.PlaylistItems {
+		track, ok := library.Tracks[strconv.FormatInt(int64(item.TrackId), 10)]
+		if ok {
+			tracks = append(tracks, track)
+		}
+	}
+	return
 }

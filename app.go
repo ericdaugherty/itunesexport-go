@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -12,6 +13,7 @@ const (
 	
 Flags:
     -library <file path>        Path to iTunes Music Libary XML File.
+	-output <file path>         Path where the playlists should be written.
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
 
@@ -32,9 +34,12 @@ var (
 	commandLineErrorMessage = ""
 
 	libraryPath                    string
+	outputPath                     string
 	includeAllPlaylists            bool
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
+
+	exportSettings ExportSettings
 )
 
 func main() {
@@ -44,10 +49,10 @@ func main() {
 	flags := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flags.SetOutput(ioutil.Discard)
 
-	//TODO Remove default Library Path
-	flags.StringVar(&libraryPath, "library", "/Users/eric/Music/iTunes/iTunes Music Library.xml", "location of the iTunes Library XML file.")
-	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "includes all user defined playlists.")
-	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "includes all playlists in the export, including built in iTunes Playlists.")
+	flags.StringVar(&libraryPath, "library", "", "")
+	flags.StringVar(&outputPath, "output", "", "")
+	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "")
+	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "")
 
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
@@ -77,19 +82,30 @@ func main() {
 		fmt.Printf(UsageErrorMessage, commandLineErrorMessage)
 	}
 
-	fmt.Println("Loading Library:", libraryPath)
+	if libraryPath == "" {
+		libraryPath = defaultLibraryPath()
+	}
+	libraryPath = filepath.Clean(libraryPath)
 
+	fmt.Println("Loading Library:", libraryPath)
 	library, err := LoadLibrary(libraryPath)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-
+	exportSettings.Library = library
 	fmt.Printf("Library loaded successfully with %v playlists and %v tracks.\n", len(library.Playlists), len(library.Tracks))
 
-	var exportSettings ExportSettings
+	exportSettings.OutputPath = outputPath
+	exportSettings.Playlists = parsePlaylists(exportSettings.Library)
+	exportSettings.Extension = "m3u"
+
+	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
+	ExportPlaylists(&exportSettings)
+}
+
+func parsePlaylists(library *Library) (playlists []Playlist) {
 	if includeAllPlaylists {
-		var playlists []Playlist
 		for _, value := range library.Playlists {
 			if value.DistinguishedKind == 0 && value.Name != "Library" {
 				playlists = append(playlists, value)
@@ -97,12 +113,10 @@ func main() {
 		}
 		exportSettings.Playlists = playlists
 	} else if includeAllWithBuiltinPlaylists {
-		exportSettings.Playlists = library.Playlists
+		playlists = library.Playlists
 	}
 
 	if len(includePlaylistNames) > 0 {
-		var playlists []Playlist
-
 		for _, playlistName := range includePlaylistNames {
 			playlist, ok := library.PlaylistMap[playlistName]
 			if ok {
@@ -112,8 +126,6 @@ func main() {
 			}
 
 		}
-		exportSettings.Playlists = append(exportSettings.Playlists, playlists...)
 	}
-
-	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
+	return playlists
 }
