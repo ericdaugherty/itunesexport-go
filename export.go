@@ -50,6 +50,10 @@ func ExportPlaylists(exportSettings *ExportSettings) error {
 			header, entry, footer = m3uPlaylistWriters()
 		case EXT:
 			header, entry, footer = extPlaylistWriters()
+		case WPL:
+			header, entry, footer = wplPlaylistWriters()
+		case ZPL:
+			header, entry, footer = zplPlaylistWriters()
 		default:
 			return errors.New("Export Type Not Implemented")
 		}
@@ -130,6 +134,79 @@ func extPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 
 	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
 		return nil
+	}
+
+	return
+}
+
+func wplPlaylistWriters() (header playlistWriter, entry trackWriter, footer playlistWriter) {
+
+	const headerString = `<?wpl version=\"1.0\"?>
+<smil>
+  <head>
+    <author />
+    <title>%v</title>
+  </head>
+  <body>
+    <seq>
+`
+
+	const entryString = "      <media src=%v></media>\n"
+	const footerString = `    </seq>
+  </body>
+</smil>
+`
+
+	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+		_, err := w.Write([]byte(fmt.Sprintf(headerString, playlist.Name)))
+		return err
+	}
+
+	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+		_, err := w.Write([]byte(fmt.Sprintf(entryString, fileLocation)))
+		return err
+	}
+
+	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+		_, err := w.Write([]byte(footerString))
+		return err
+	}
+
+	return
+}
+
+func zplPlaylistWriters() (header playlistWriter, entry trackWriter, footer playlistWriter) {
+
+	const headerString = `<?zpl version=\"1.0\"?>
+<smil>
+  <head>
+    <meta name="Generator" content="Zune -- 1.3.5728.0" />
+    <author />
+    <title>%v</title>
+  </head>
+  <body>
+    <seq>
+`
+
+	const entryString = "      <media src=%v></media>\n"
+	const footerString = `    </seq>
+  </body>
+</smil>
+`
+
+	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+		_, err := w.Write([]byte(fmt.Sprintf(headerString, playlist.Name)))
+		return err
+	}
+
+	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+		_, err := w.Write([]byte(fmt.Sprintf(entryString, fileLocation)))
+		return err
+	}
+
+	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+		_, err := w.Write([]byte(footerString))
+		return err
 	}
 
 	return

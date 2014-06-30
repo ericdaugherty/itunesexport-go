@@ -111,7 +111,6 @@ func main() {
 
 	exportSettings.OutputPath = outputPath
 	exportSettings.Playlists = parsePlaylists(exportSettings.Library)
-	exportSettings.Extension = "m3u"
 
 	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
 	err = ExportPlaylists(&exportSettings)
@@ -124,12 +123,16 @@ func parseExportType() error {
 	switch strings.ToUpper(exportType) {
 	case "M3U":
 		exportSettings.ExportType = M3U
+		exportSettings.Extension = "m3u"
 	case "EXT":
 		exportSettings.ExportType = EXT
+		exportSettings.Extension = "m3u"
 	case "WPL":
 		exportSettings.ExportType = WPL
+		exportSettings.Extension = "wpl"
 	case "ZPL":
 		exportSettings.ExportType = ZPL
+		exportSettings.Extension = "zpl"
 	default:
 		return errors.New("Unknown Export Type: " + exportType)
 	}
