@@ -1,3 +1,5 @@
 itunesexport-go
 output
 *.m3u
+*.wpl
+*.zpl

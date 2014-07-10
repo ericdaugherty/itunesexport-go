@@ -20,6 +20,9 @@ Flags:
                                 EXT = M3U Extended, WPL = Windows Playlist, ZPL = Zune Playlist
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
+    -copy <COPY TYPE>           Copy the music tracks as well, according the the COPY TYPE scheme...
+        PLAYLIST                Copies the music into a folder for each playlist.
+        ITUNES                  Copies using the itunes music/<Artist>/<Album>/<Track> structure.
 
 `
 	UsageErrorMessage = `Unable to parse command line parameters.
@@ -43,6 +46,7 @@ var (
 	includeAllPlaylists            bool
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
+	copyType                       string
 
 	exportSettings ExportSettings
 )
@@ -59,6 +63,7 @@ func main() {
 	flags.StringVar(&exportType, "type", "M3U", "")
 	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "")
 	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "")
+	flags.StringVar(&copyType, "copy", "NONE", "")
 
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
@@ -67,6 +72,12 @@ func main() {
 	}
 
 	err = parseExportType()
+	if err != nil {
+		commandLineError = true
+		commandLineErrorMessage = fmt.Sprintf("%v\n", err.Error())
+	}
+
+	err = parseCopyType()
 	if err != nil {
 		commandLineError = true
 		commandLineErrorMessage = fmt.Sprintf("%v\n", err.Error())
@@ -113,7 +124,7 @@ func main() {
 	exportSettings.Playlists = parsePlaylists(exportSettings.Library)
 
 	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
-	err = ExportPlaylists(&exportSettings)
+	err = ExportPlaylists(&exportSettings, library)
 	if err != nil {
 		fmt.Printf("Error Exporting Playlist: %v\n", err.Error())
 	}
@@ -135,6 +146,20 @@ func parseExportType() error {
 		exportSettings.Extension = "zpl"
 	default:
 		return errors.New("Unknown Export Type: " + exportType)
+	}
+	return nil
+}
+
+func parseCopyType() error {
+	switch strings.ToUpper(copyType) {
+	case "NONE":
+		exportSettings.CopyType = COPY_NONE
+	case "PLAYLIST":
+		exportSettings.CopyType = COPY_PLAYLIST
+	case "ITUNES":
+		exportSettings.CopyType = COPY_ITUNES
+	default:
+		return errors.New("Unknown Copy Type: " + copyType)
 	}
 	return nil
 }
