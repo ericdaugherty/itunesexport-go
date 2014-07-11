@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
+	"time"
 )
 
 const (
@@ -36,6 +36,8 @@ type ExportSettings struct {
 }
 
 func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
+
+	start := time.Now()
 
 	for _, playlist := range exportSettings.Playlists {
 		fmt.Printf("Exporting Playlist %v\n", playlist.Name)
@@ -73,19 +75,20 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 		// Write the body of the playlist
 		for _, track := range playlist.Tracks(exportSettings.Library) {
 			fileLocation, errParse := url.QueryUnescape(track.Location)
-			fileLocation = strings.TrimPrefix(fileLocation, "file://localhost")
-			if isWindows() {
-				fileLocation = strings.TrimPrefix(fileLocation, "/")
-			}
+			fileLocation = trimTrackLocationPrefix(fileLocation)
 			if errParse != nil {
 				fmt.Printf("Skipping Track %v because an error occured parsing the location: %v\n", track.Name, errParse.Error())
 				continue
 			}
 
-			// TODO: Parse location here and pass it in to method.
 			err := entry(file, exportSettings, &playlist, &track, fileLocation)
 			if err != nil {
 				return err
+			}
+
+			err = copyTrack(exportSettings, library, &playlist, fileLocation)
+			if err != nil {
+				fmt.Printf("Unable to copy file %v Error: %v\n", fileLocation, err.Error())
 			}
 		}
 
@@ -95,40 +98,29 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 			return err
 		}
 
-		// Copy the tracks (if needed)
-		if exportSettings.CopyType != COPY_NONE {
-			copyTracks(exportSettings, library, &playlist)
-		}
-
 	}
 
 	fmt.Printf("\n\nExport Complete.\n")
-
+	fmt.Println(time.Since(start).String())
 	return nil
 }
 
-func copyTracks(exportSettings *ExportSettings, library *Library, playlist *Playlist) {
+func copyTrack(exportSettings *ExportSettings, library *Library, playlist *Playlist, fileLocation string) error {
 
 	var destinationPath = ""
 
 	switch exportSettings.CopyType {
 	case COPY_PLAYLIST:
-		destinationPath = exportSettings.OutputPath + string(os.PathSeparator) + playlist.Name
+		destinationPath = filepath.Join(exportSettings.OutputPath, playlist.Name)
+	default:
+		return errors.New("Unknown Copy Type")
 	}
 
-	for _, item := range playlist.Tracks(library) {
-		src, err := url.QueryUnescape(trimTrackLocation(item.Location))
-		if err != nil {
-			fmt.Printf("Error copying source file.  Unable to decode location: %v\n", item.Location)
-			continue
-		}
-		dest := destinationPath + string(os.PathSeparator) + filepath.Base(item.Location)
+	dest := filepath.Join(destinationPath, filepath.Base(fileLocation))
 
-		err = copyFile(src, dest)
-		if err != nil {
-			fmt.Printf("Error copying source file %v.  %v\n", src, err.Error())
-		}
-	}
+	return copyFile(fileLocation, dest)
+
+	return nil
 }
 
 func copyFile(src, dest string) error {
@@ -142,5 +134,47 @@ func copyFile(src, dest string) error {
 		errors.New("Source file is not a regular file.")
 	}
 
-	return errors.New("Not Implemented")
+	_, err = os.Stat(dest)
+	if err == nil {
+		// No need to copy.
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	destDir := filepath.Dir(dest)
+	_, err = os.Stat(destDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(destDir, 0777)
+			if err != nil {
+				return nil
+			}
+		} else {
+			return err
+		}
+	}
+
+	return copyFileData(src, dest)
+}
+
+func copyFileData(src, dest string) (err error) {
+
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
+	err = out.Sync()
+	return
 }
