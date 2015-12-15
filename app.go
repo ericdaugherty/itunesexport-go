@@ -21,8 +21,10 @@ Flags:
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
     -copy <COPY TYPE>           Copy the music tracks as well, according the the COPY TYPE scheme...
+        NONE                    (default) The music files will not be copied.	                            
         PLAYLIST                Copies the music into a folder for each playlist.
         ITUNES                  Copies using the itunes music/<Artist>/<Album>/<Track> structure.
+        FLAT                    Copies all the music into the output folder.
 
 `
 	UsageErrorMessage = `Unable to parse command line parameters.
@@ -158,6 +160,8 @@ func parseCopyType() error {
 		exportSettings.CopyType = COPY_PLAYLIST
 	case "ITUNES":
 		exportSettings.CopyType = COPY_ITUNES
+	case "FLAT":
+		exportSettings.CopyType = COPY_FLAT
 	default:
 		return errors.New("Unknown Copy Type: " + copyType)
 	}

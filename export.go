@@ -21,6 +21,7 @@ const (
 	COPY_NONE = iota
 	COPY_PLAYLIST
 	COPY_ITUNES
+	COPY_FLAT
 )
 
 type playlistWriter func(io.Writer, *ExportSettings, *Playlist) error
@@ -74,8 +75,17 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 
 		// Write the body of the playlist
 		for _, track := range playlist.Tracks(exportSettings.Library) {
-			fileLocation, errParse := url.QueryUnescape(track.Location)
-			fileLocation = trimTrackLocationPrefix(fileLocation)
+
+			sourceFileLocation, errParse := url.QueryUnescape(track.Location)
+			sourceFileLocation = trimTrackLocationPrefix(fileLocation)
+
+
+			playlistFileLocation, err := copyTrack(exportSettings, library, &playlist, &track)
+			if err != nil {
+				fmt.Printf("Unable to copy file %v Error: %v\n", fileLocation, err.Error())
+				continue
+			}
+
 			if errParse != nil {
 				fmt.Printf("Skipping Track %v because an error occured parsing the location: %v\n", track.Name, errParse.Error())
 				continue
@@ -84,11 +94,6 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 			err := entry(file, exportSettings, &playlist, &track, fileLocation)
 			if err != nil {
 				return err
-			}
-
-			err = copyTrack(exportSettings, library, &playlist, fileLocation)
-			if err != nil {
-				fmt.Printf("Unable to copy file %v Error: %v\n", fileLocation, err.Error())
 			}
 		}
 
@@ -105,13 +110,17 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 	return nil
 }
 
-func copyTrack(exportSettings *ExportSettings, library *Library, playlist *Playlist, fileLocation string) error {
+func copyTrack(exportSettings *ExportSettings, library *Library, playlist *Playlist, track *Track, sourceFileLocation string) (playlistFileLocation string, error) {
 
 	var destinationPath = ""
 
 	switch exportSettings.CopyType {
 	case COPY_PLAYLIST:
 		destinationPath = filepath.Join(exportSettings.OutputPath, playlist.Name)
+	case COPY_ITUNES:
+		destinationPath = filepath.Join(exportSettings.OutputPath, track.Artist, track.Album)
+	case COPY_FLAT:
+		destinationPath = exportSettings.OutputPath
 	default:
 		return errors.New("Unknown Copy Type")
 	}
@@ -120,7 +129,7 @@ func copyTrack(exportSettings *ExportSettings, library *Library, playlist *Playl
 
 	return copyFile(fileLocation, dest)
 
-	return nil
+	return destinationPath, nil
 }
 
 func copyFile(src, dest string) error {
