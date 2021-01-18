@@ -129,7 +129,7 @@ func copyTrack(exportSettings *ExportSettings, playlist *Playlist, track *Track,
 	if err := copyFile(sourceFileLocation, dest); err != nil {
 		return "", err
 	}
-	return destinationPath, nil
+	return dest, nil
 }
 
 func copyFile(src, dest string) error {
