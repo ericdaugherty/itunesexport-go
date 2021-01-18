@@ -14,7 +14,7 @@ const (
 	UsageMessage = `usage: %v [<flags>] [include <playlist name>...]
 	
 Flags:
-    -library <file path>        Path to iTunes Music Libary XML File.
+    -library <file path>        Path to iTunes Music Library XML File.
     -output <file path>         Path where the playlists should be written.
     -type <M3U|EXT|WPL|ZPL>     Type of playlist file to write.  Defaults to M3U
                                 EXT = M3U Extended, WPL = Windows Playlist, ZPL = Zune Playlist
@@ -116,7 +116,7 @@ func main() {
 	fmt.Println("Loading Library:", libraryPath)
 	library, err := LoadLibrary(libraryPath)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 		return
 	}
 	exportSettings.Library = library
@@ -128,7 +128,8 @@ func main() {
 	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
 	err = ExportPlaylists(&exportSettings, library)
 	if err != nil {
-		fmt.Printf("Error Exporting Playlist: %v\n", err.Error())
+		fmt.Printf("Error Exporting Playlist: %v\n", err)
+		return
 	}
 }
 
@@ -168,7 +169,8 @@ func parseCopyType() error {
 	return nil
 }
 
-func parsePlaylists(library *Library) (playlists []Playlist) {
+func parsePlaylists(library *Library) []Playlist {
+	var playlists []Playlist
 	if includeAllPlaylists {
 		for _, value := range library.Playlists {
 			if value.DistinguishedKind == 0 && value.Name != "Library" {
@@ -186,7 +188,7 @@ func parsePlaylists(library *Library) (playlists []Playlist) {
 			if ok {
 				playlists = append(playlists, playlist)
 			} else {
-				fmt.Printf("Unable to find matching playlist for name: %v  Skipping Playlist.\n", playlistName)
+				fmt.Printf("Unable to find matching playlist for name: %q. Skipping Playlist.\n", playlistName)
 			}
 
 		}
