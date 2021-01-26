@@ -1,10 +1,11 @@
 package main
 
 import (
-	plist "github.com/DHowett/go-plist"
 	"os"
 	"strconv"
 	"time"
+
+	plist "howett.net/plist"
 )
 
 type Library struct {
@@ -97,7 +98,7 @@ func LoadLibrary(fileLocation string) (*Library, error) {
 	return &library, nil
 }
 
-func (playlist *Playlist) Tracks(library *Library) ([]Track) {
+func (playlist *Playlist) Tracks(library *Library) []Track {
 	var tracks []Track
 	for _, item := range playlist.PlaylistItems {
 		track, ok := library.Tracks[strconv.FormatInt(int64(item.TrackId), 10)]

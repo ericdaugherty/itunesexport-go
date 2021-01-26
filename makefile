@@ -7,7 +7,7 @@ all: build
 
 build:
 	go get -v
-	go build -v -ldflags "-X main.Version $(buildnumber)"
+	go build -v -ldflags "-X main.Version=$(buildnumber)"
 
 package: build
 	rm -Rf output
