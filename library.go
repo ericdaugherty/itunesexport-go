@@ -71,17 +71,14 @@ type PlaylistItem struct {
 	TrackId int `plist:"Track ID"`
 }
 
-func LoadLibrary(fileLocation string) (returnLibrary *Library, err error) {
-
+func LoadLibrary(fileLocation string) (*Library, error) {
 	if _, statErr := os.Stat(fileLocation); os.IsNotExist(statErr) {
-		err = statErr
-		return
+		return nil, statErr
 	}
 
 	file, pathErr := os.Open(fileLocation)
 	if pathErr != nil {
-		err = pathErr
-		return
+		return nil, pathErr
 	}
 
 	decoder := plist.NewDecoder(file)
@@ -89,8 +86,7 @@ func LoadLibrary(fileLocation string) (returnLibrary *Library, err error) {
 	var library Library
 	decodeErr := decoder.Decode(&library)
 	if decodeErr != nil {
-		err = decodeErr
-		return
+		return nil, decodeErr
 	}
 
 	library.PlaylistMap = make(map[string]Playlist)
@@ -98,15 +94,16 @@ func LoadLibrary(fileLocation string) (returnLibrary *Library, err error) {
 		library.PlaylistMap[value.Name] = value
 	}
 
-	return &library, err
+	return &library, nil
 }
 
-func (playlist *Playlist) Tracks(library *Library) (tracks []Track) {
+func (playlist *Playlist) Tracks(library *Library) ([]Track) {
+	var tracks []Track
 	for _, item := range playlist.PlaylistItems {
 		track, ok := library.Tracks[strconv.FormatInt(int64(item.TrackId), 10)]
 		if ok {
 			tracks = append(tracks, track)
 		}
 	}
-	return
+	return tracks
 }

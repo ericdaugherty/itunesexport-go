@@ -15,5 +15,5 @@ func defaultLibraryPath() string {
 }
 
 func trimTrackLocationPrefix(path string) string {
-	return strings.TrimPrefix(path, "file://localhost/"
+	return strings.TrimPrefix(path, "file://localhost/")
 }

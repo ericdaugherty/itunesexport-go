@@ -37,7 +37,6 @@ type ExportSettings struct {
 }
 
 func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
-
 	start := time.Now()
 
 	for _, playlist := range exportSettings.Playlists {
@@ -77,12 +76,11 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 		for _, track := range playlist.Tracks(exportSettings.Library) {
 
 			sourceFileLocation, errParse := url.QueryUnescape(track.Location)
-			sourceFileLocation = trimTrackLocationPrefix(fileLocation)
+			sourceFileLocation = trimTrackLocationPrefix(sourceFileLocation)
 
-
-			playlistFileLocation, err := copyTrack(exportSettings, library, &playlist, &track)
+			destFileLocation, err := copyTrack(exportSettings, &playlist, &track, sourceFileLocation)
 			if err != nil {
-				fmt.Printf("Unable to copy file %v Error: %v\n", fileLocation, err.Error())
+				fmt.Printf("Unable to copy file %v: %v\n", sourceFileLocation, err.Error())
 				continue
 			}
 
@@ -91,7 +89,7 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 				continue
 			}
 
-			err := entry(file, exportSettings, &playlist, &track, fileLocation)
+			err = entry(file, exportSettings, &playlist, &track, destFileLocation)
 			if err != nil {
 				return err
 			}
@@ -110,10 +108,10 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 	return nil
 }
 
-func copyTrack(exportSettings *ExportSettings, library *Library, playlist *Playlist, track *Track, sourceFileLocation string) (playlistFileLocation string, error) {
-
-	var destinationPath = ""
-
+// copyTrack copies a file from the provided sourceFileLocation to another location. The new location
+// depends on the CopyType selected in exportSettings. If COPY_NONE is selected, the sourceFileLocation is returned.
+func copyTrack(exportSettings *ExportSettings, playlist *Playlist, track *Track, sourceFileLocation string) (string, error) {
+	var destinationPath string
 	switch exportSettings.CopyType {
 	case COPY_PLAYLIST:
 		destinationPath = filepath.Join(exportSettings.OutputPath, playlist.Name)
@@ -121,26 +119,27 @@ func copyTrack(exportSettings *ExportSettings, library *Library, playlist *Playl
 		destinationPath = filepath.Join(exportSettings.OutputPath, track.Artist, track.Album)
 	case COPY_FLAT:
 		destinationPath = exportSettings.OutputPath
+	case COPY_NONE:
+		return sourceFileLocation, nil
 	default:
-		return errors.New("Unknown Copy Type")
+		return "", errors.New("Unknown Copy Type")
 	}
+	dest := filepath.Join(destinationPath, filepath.Base(sourceFileLocation))
 
-	dest := filepath.Join(destinationPath, filepath.Base(fileLocation))
-
-	return copyFile(fileLocation, dest)
-
-	return destinationPath, nil
+	if err := copyFile(sourceFileLocation, dest); err != nil {
+		return "", err
+	}
+	return dest, nil
 }
 
 func copyFile(src, dest string) error {
-
 	sourceFileInfo, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
 
 	if !sourceFileInfo.Mode().IsRegular() {
-		errors.New("Source file is not a regular file.")
+		return errors.New("Source file is not a regular file.")
 	}
 
 	_, err = os.Stat(dest)
@@ -167,8 +166,7 @@ func copyFile(src, dest string) error {
 	return copyFileData(src, dest)
 }
 
-func copyFileData(src, dest string) (err error) {
-
+func copyFileData(src, dest string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -184,6 +182,5 @@ func copyFileData(src, dest string) (err error) {
 	if _, err = io.Copy(out, in); err != nil {
 		return err
 	}
-	err = out.Sync()
-	return
+	return out.Sync()
 }

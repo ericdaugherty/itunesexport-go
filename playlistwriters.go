@@ -11,17 +11,17 @@ func m3uPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 	const headerString = "# M3U Playlist '%v' exported %v by iTunes Export v. %v (http://www.ericdaugherty.com/dev/itunesexport/)\n"
 	const entryString = "%v\n"
 
-	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	header = func(w io.Writer, _ *ExportSettings, playlist *Playlist) error {
 		_, err := w.Write([]byte(fmt.Sprintf(headerString, playlist.Name, time.Now().Format("2006-01-02 3:04PM"), Version)))
 		return err
 	}
 
-	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+	entry = func(w io.Writer, _ *ExportSettings, _ *Playlist, _ *Track, fileLocation string) error {
 		_, err := w.Write([]byte(fmt.Sprintf(entryString, fileLocation)))
 		return err
 	}
 
-	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	footer = func(_ io.Writer, _ *ExportSettings, _ *Playlist) error {
 		return nil
 	}
 
@@ -33,17 +33,17 @@ func extPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 	const headerString = "#EXTM3U\n"
 	const entryString = "#EXTINF:%v,%v - %v\n%v\n"
 
-	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	header = func(w io.Writer, _ *ExportSettings, _ *Playlist) error {
 		_, err := w.Write([]byte(fmt.Sprintf(headerString)))
 		return err
 	}
 
-	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+	entry = func(w io.Writer, _ *ExportSettings, _ *Playlist, track *Track, fileLocation string) error {
 		_, err := w.Write([]byte(fmt.Sprintf(entryString, track.TotalTime/1000, track.Artist, track.Name, fileLocation)))
 		return err
 	}
 
-	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	footer = func(_ io.Writer, _ *ExportSettings, _ *Playlist) error {
 		return nil
 	}
 
@@ -68,17 +68,17 @@ func wplPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 </smil>
 `
 
-	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	header = func(w io.Writer, _ *ExportSettings, playlist *Playlist) error {
 		_, err := w.Write([]byte(fmt.Sprintf(headerString, playlist.Name)))
 		return err
 	}
 
-	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+	entry = func(w io.Writer, _ *ExportSettings, _ *Playlist, _ *Track, fileLocation string) error {
 		_, err := w.Write([]byte(fmt.Sprintf(entryString, fileLocation)))
 		return err
 	}
 
-	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	footer = func(w io.Writer, _ *ExportSettings, _ *Playlist) error {
 		_, err := w.Write([]byte(footerString))
 		return err
 	}
@@ -105,17 +105,17 @@ func zplPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 </smil>
 `
 
-	header = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	header = func(w io.Writer, _ *ExportSettings, playlist *Playlist) error {
 		_, err := w.Write([]byte(fmt.Sprintf(headerString, playlist.Name)))
 		return err
 	}
 
-	entry = func(w io.Writer, exporterSetting *ExportSettings, playlist *Playlist, track *Track, fileLocation string) error {
+	entry = func(w io.Writer, _ *ExportSettings, _ *Playlist, _ *Track, fileLocation string) error {
 		_, err := w.Write([]byte(fmt.Sprintf(entryString, fileLocation)))
 		return err
 	}
 
-	footer = func(w io.Writer, exportSettings *ExportSettings, playlist *Playlist) error {
+	footer = func(w io.Writer, _ *ExportSettings, _ *Playlist) error {
 		_, err := w.Write([]byte(footerString))
 		return err
 	}
