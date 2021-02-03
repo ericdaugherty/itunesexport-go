@@ -53,6 +53,7 @@ type Track struct {
 	Location            string
 	FileFolderCount     int `plist:"File Folder Count"`
 	LibraryFolderCount  int `plist:"Library Folder Count"`
+	Loved               bool `plist:"Loved"`
 }
 
 type Playlist struct {
