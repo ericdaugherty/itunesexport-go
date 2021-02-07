@@ -33,7 +33,12 @@ type Track struct {
 	Kind                string
 	Size                int
 	TotalTime           int `plist:"Total Time"`
+	StartTime           int `plist:"Start Time"`
+	StopTime            int `plist:"Stop Time"`
 	TrackNumber         int `plist:"Track Number"`
+	TrackCount          int `plist:"Track Count"`
+	DiscNumber          int `plist:"Disc Number"`
+	DiscCount           int `plist:"Disc Count"`
 	Year                int
 	DateModified        time.Time `plist:"Date Modified"`
 	DateAdded           time.Time `plist:"Date Added"`
@@ -53,7 +58,17 @@ type Track struct {
 	Location            string
 	FileFolderCount     int `plist:"File Folder Count"`
 	LibraryFolderCount  int `plist:"Library Folder Count"`
-	Loved               bool `plist:"Loved"`
+	Loved               bool
+	Disabled            bool
+	Comments            string
+	SortName            string `plist:"Sort Name"`
+	SortAlbum           string `plist:"Sort Album"`
+	SortAlbumArtist     string `plist:"Sort Album Artist"`
+	SortArtist          string `plist:"Sort Artist"`
+	SortComposer        string `plist:"Sort Composer"`
+	Work                string
+	Grouping            string
+	VolumeAdjustment    int `plist:"Volume Adjustment"`
 }
 
 type Playlist struct {
