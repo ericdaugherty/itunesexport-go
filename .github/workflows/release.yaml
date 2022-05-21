@@ -25,5 +25,6 @@ jobs:
         goarch: ${{ matrix.goarch }}
         goversion: "latest"
         binary_name: "itunesexport"
-        build_flags: "-ldflags -X main.Version=${{ env.APP_VERSION }}"
+        build_flags: -v
+        ldflags: -X "main.Version=${{ env.APP_VERSION }}"
         extra_files: README.md
