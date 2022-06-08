@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -28,12 +29,14 @@ type playlistWriter func(io.Writer, *ExportSettings, *Playlist) error
 type trackWriter func(io.Writer, *ExportSettings, *Playlist, *Track, string) error
 
 type ExportSettings struct {
-	Library    *Library
-	Playlists  []Playlist
-	ExportType int
-	OutputPath string
-	Extension  string
-	CopyType   int
+	Library           *Library
+	Playlists         []Playlist
+	ExportType        int
+	OutputPath        string
+	Extension         string
+	CopyType          int
+	OriginalMusicPath string
+	NewMusicPath      string
 }
 
 func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
@@ -120,6 +123,9 @@ func copyTrack(exportSettings *ExportSettings, playlist *Playlist, track *Track,
 	case COPY_FLAT:
 		destinationPath = exportSettings.OutputPath
 	case COPY_NONE:
+		if exportSettings.NewMusicPath != "" {
+			return strings.Replace(sourceFileLocation, exportSettings.OriginalMusicPath, exportSettings.NewMusicPath, 1), nil
+		}
 		return sourceFileLocation, nil
 	default:
 		return "", errors.New("Unknown Copy Type")

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,7 +26,8 @@ Flags:
         PLAYLIST                Copies the music into a folder for each playlist.
         ITUNES                  Copies using the itunes music/<Artist>/<Album>/<Track> structure.
         FLAT                    Copies all the music into the output folder.
-
+    -musicPath <new path>       Base path to the music files. This will override the Music Folder path from iTunes.
+	-musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
 `
 	UsageErrorMessage = `Unable to parse command line parameters.
 %v
@@ -49,6 +51,8 @@ var (
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
 	copyType                       string
+	musicPath                      string
+	musicPathOrig                  string
 
 	exportSettings ExportSettings
 )
@@ -66,6 +70,8 @@ func main() {
 	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "")
 	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "")
 	flags.StringVar(&copyType, "copy", "NONE", "")
+	flags.StringVar(&musicPath, "musicPath", "", "")
+	flags.StringVar(&musicPathOrig, "musicPathOrig", "", "")
 
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
@@ -121,6 +127,20 @@ func main() {
 	}
 	exportSettings.Library = library
 	fmt.Printf("Library loaded successfully with %v playlists and %v tracks.\n", len(library.Playlists), len(library.Tracks))
+
+	if musicPath != "" {
+		if musicPathOrig != "" {
+			exportSettings.OriginalMusicPath = musicPathOrig
+		} else {
+			origMusicPath, err := url.QueryUnescape(library.MusicFolder)
+			if err != nil {
+				fmt.Printf("Error parsing Music Folder from library: %v\n", err)
+				return
+			}
+			exportSettings.OriginalMusicPath = trimTrackLocationPrefix(origMusicPath)
+		}
+	}
+	exportSettings.NewMusicPath = musicPath
 
 	exportSettings.OutputPath = outputPath
 	exportSettings.Playlists = parsePlaylists(exportSettings.Library)

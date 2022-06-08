@@ -27,4 +27,6 @@ Flags:
         PLAYLIST                Copies the music into a folder for each playlist.
         ITUNES                  Copies using the itunes music/<Artist>/<Album>/<Track> structure.
         FLAT                    Copies all the music into the output folder.
+    -musicPath <new path>       Base path to the music files. This will override the Music Folder path from iTunes.
+	-musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
 ```
