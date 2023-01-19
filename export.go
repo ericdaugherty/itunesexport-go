@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"regexp"
 )
 
 const (
@@ -45,7 +46,12 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 	for _, playlist := range exportSettings.Playlists {
 		fmt.Printf("Exporting Playlist %v\n", playlist.Name)
 
-		fileName := filepath.Join(exportSettings.OutputPath, playlist.Name+"."+exportSettings.Extension)
+		// Prevent illegal characters in playlist filenames
+		illegalChars := regexp.MustCompile(`[*?<>|]`)
+		safePlaylistName := illegalChars.ReplaceAllString(playlist.Name, "_")
+		safePlaylistName = strings.Replace(safePlaylistName, ":", " - ", -1)
+
+		fileName := filepath.Join(exportSettings.OutputPath, safePlaylistName+"."+exportSettings.Extension)
 
 		file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		defer file.Close()
