@@ -17,7 +17,10 @@ package: build
 	mv itunesexport-go.exe output/itunesexport.exe
 	GOOS=windows GOARCH=amd64 go build -v -ldflags "-X main.Version $(buildnumber)"
 	mv itunesexport-go.exe output/itunesexport64.exe
-	
+
+test:
+	go test
+
 clean:
 	rm -Rf itunesexport-go
 	rm -Rf output
