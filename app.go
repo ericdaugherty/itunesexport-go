@@ -101,7 +101,6 @@ func main() {
 			case ModeUnknown:
 				commandLineError = true
 				commandLineErrorMessage = fmt.Sprintf("Unexpected paramter %v\n", flagValue)
-				break
 			case ModeInclude:
 				includePlaylistNames = append(includePlaylistNames, flagValue)
 			}
@@ -115,7 +114,11 @@ func main() {
 	}
 
 	if libraryPath == "" {
-		libraryPath = defaultLibraryPath()
+		libraryPath, err = defaultLibraryPath()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 	libraryPath = filepath.Clean(libraryPath)
 

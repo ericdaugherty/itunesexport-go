@@ -17,9 +17,18 @@ package: build
 	mv itunesexport-go.exe output/itunesexport.exe
 	GOOS=windows GOARCH=amd64 go build -v -ldflags "-X main.Version $(buildnumber)"
 	mv itunesexport-go.exe output/itunesexport64.exe
-	
+
+test: clean test-build
+	go test
+
+test-build:
+	GOOS=darwin go build
+	GOOS=windows go build
+	GOOS=linux go build
+	make clean
+
 clean:
-	rm -Rf itunesexport-go
+	rm -Rf itunesexport-go*
 	rm -Rf output
 
 run: build

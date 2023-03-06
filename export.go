@@ -54,10 +54,10 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 		fileName := filepath.Join(exportSettings.OutputPath, safePlaylistName+"."+exportSettings.Extension)
 
 		file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-		defer file.Close()
 		if err != nil {
 			return err
 		}
+		defer file.Close()
 
 		var header playlistWriter
 		var entry trackWriter
@@ -72,7 +72,7 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 		case ZPL:
 			header, entry, footer = zplPlaylistWriters()
 		default:
-			return errors.New("Export Type Not Implemented")
+			return errors.New("export type not implemented")
 		}
 
 		// Write out the Header
@@ -134,7 +134,7 @@ func copyTrack(exportSettings *ExportSettings, playlist *Playlist, track *Track,
 		}
 		return sourceFileLocation, nil
 	default:
-		return "", errors.New("Unknown Copy Type")
+		return "", errors.New("unknown copy type")
 	}
 	dest := filepath.Join(destinationPath, filepath.Base(sourceFileLocation))
 
@@ -151,7 +151,7 @@ func copyFile(src, dest string) error {
 	}
 
 	if !sourceFileInfo.Mode().IsRegular() {
-		return errors.New("Source file is not a regular file.")
+		return errors.New("source file is not a regular file.")
 	}
 
 	_, err = os.Stat(dest)
