@@ -22,6 +22,7 @@ Flags:
                                 EXT = M3U Extended, WPL = Windows Playlist, ZPL = Zune Playlist
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
+    -includePlaylistWithRegex   Include all playlists matching the provided regular expression
     -copy <COPY TYPE>           Copy the music tracks as well, according the the COPY TYPE scheme...
         NONE                    (default) The music files will not be copied.	                            
         PLAYLIST                Copies the music into a folder for each playlist.
@@ -71,6 +72,7 @@ func main() {
 	flags.StringVar(&exportType, "type", "M3U", "")
 	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "")
 	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "")
+	flags.StringVar(&includePlaylistWithRegex, "includePlaylistWithRegex", "", "")
 	flags.StringVar(&copyType, "copy", "NONE", "")
 	flags.StringVar(&musicPath, "musicPath", "", "")
 	flags.StringVar(&musicPathOrig, "musicPathOrig", "", "")
@@ -196,7 +198,7 @@ func parseCopyType() error {
 
 func parsePlaylists(library *Library) []Playlist {
 	var playlists []Playlist
-	
+
 	if includeAllPlaylists {
 		for _, playlist := range library.Playlists {
 			if playlist.DistinguishedKind == 0 && playlist.Name != "Library" {
