@@ -11,11 +11,6 @@ import (
 // we assume the drive was mounted to this path
 const DefaultLinuxDrive = "/mnt/itunes"
 
-func isWindows() bool {
-	return false
-}
-
-
 func defaultLibraryPath() (string, error) {
 	return defaultLibraryPathInternal(execCmd)
 }

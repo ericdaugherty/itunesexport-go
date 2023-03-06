@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-func isWindows() bool {
-	return false
-}
-
 func defaultLibraryPath() (string, error) {
 	return fmt.Sprintf("/Users/%v/Music/iTunes/iTunes Music Library.xml", os.Getenv("USER")), nil
 }
