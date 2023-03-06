@@ -19,7 +19,7 @@ func TestGetDefaultLibraryInWsl(t *testing.T) {
 			cnt++
 			return "\\Users\\SomeUser", nil
 		default:
-			return "", errors.New("Function called too often")
+			return "", errors.New("function called too often")
 		}
 	}
 

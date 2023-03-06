@@ -46,7 +46,6 @@ func execCmd(command string) (string, error) {
 		return "", err;
 	}
 	return strings.TrimSpace(string(result)), nil
-
 }
 
 func trimTrackLocationPrefix(path string) string {
