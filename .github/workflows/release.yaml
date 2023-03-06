@@ -9,11 +9,11 @@ jobs:
     strategy:
       matrix:
         # build and publish in parallel
-        goos: [windows, darwin]
+        goos: [windows, darwin, linux]
         goarch: [amd64, arm64]
         exclude:
           - goarch: arm64
-            goos: windows
+            goos: [windows, linux]
     steps:
     - uses: actions/checkout@v3
     - name: Set APP_VERSION env
