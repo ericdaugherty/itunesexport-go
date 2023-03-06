@@ -15,11 +15,13 @@ func isWindows() bool {
 	return false
 }
 
-func defaultLibraryPath() string {
-	return fmt.Sprintf("/Users/%v/Music/iTunes/iTunes Music Library.xml", os.Getenv("USER"))
+
+func defaultLibraryPath() (string, error) {
+	return defaultLibraryPathInternal(execCmd)
 }
 
-func defaultLibraryPath2(cmdExecFunc func(command string) (string, error)) (string, error) {
+
+func defaultLibraryPathInternal(cmdExecFunc func(command string) (string, error)) (string, error) {
 	if (os.Getenv("WSLENV") != "") {
 		return determineWslDefaultLibraryPath(cmdExecFunc)
 	} else {

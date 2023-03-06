@@ -115,7 +115,11 @@ func main() {
 	}
 
 	if libraryPath == "" {
-		libraryPath = defaultLibraryPath()
+		libraryPath, err = defaultLibraryPath()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 	libraryPath = filepath.Clean(libraryPath)
 

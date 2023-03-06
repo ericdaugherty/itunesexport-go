@@ -24,7 +24,7 @@ func TestGetDefaultLibraryInWsl(t *testing.T) {
 	}
 
 	os.Setenv("WSLENV", "FOO")
-	result, err := defaultLibraryPath2(fakeExecCmdFunc)
+	result, err := defaultLibraryPathInternal(fakeExecCmdFunc)
 	if (err != nil) {
 		t.Fail()
 		t.Logf("function return error")
@@ -44,7 +44,7 @@ func TestGetDefaultLibraryInLinux(t *testing.T) {
 	}
 
 	os.Unsetenv("WSLENV")
-	result, err := defaultLibraryPath2(stubFunc)
+	result, err := defaultLibraryPathInternal(stubFunc)
 	if (err != nil) {
 		t.Fail()
 		t.Logf("function return error")
