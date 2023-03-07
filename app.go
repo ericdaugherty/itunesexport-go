@@ -52,7 +52,7 @@ var (
 	includeAllPlaylists            bool
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
-	includePlaylistWithRegex	   string
+	includePlaylistWithRegex       string
 	copyType                       string
 	musicPath                      string
 	musicPathOrig                  string
