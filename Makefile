@@ -19,7 +19,7 @@ package: build
 	mv itunesexport-go.exe output/itunesexport64.exe
 
 test: clean test-build
-	go test
+	go test -v
 
 test-build:
 	GOOS=darwin go build
