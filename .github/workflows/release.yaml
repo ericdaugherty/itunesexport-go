@@ -9,9 +9,11 @@ jobs:
     strategy:
       matrix:
         # build and publish in parallel
-        goos: [windows, darwin]
+        goos: [windows, darwin, linux]
         goarch: [amd64, arm64]
         exclude:
+          - goarch: arm64
+            goos: linux
           - goarch: arm64
             goos: windows
     steps:
