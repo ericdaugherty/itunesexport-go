@@ -8,15 +8,15 @@ import (
 
 func TestGetDefaultLibraryInWsl(t *testing.T) {
 
-	cnt := 0
+	invocation := 1
 
 	fakeExecCmdFunc := func(_ string) (string, error) {
-		switch (cnt) {
-		case 0:
-			cnt++
-			return "C:", nil
+		switch (invocation) {
 		case 1:
-			cnt++
+			invocation++
+			return "C:", nil
+		case 2:
+			invocation++
 			return "\\Users\\SomeUser", nil
 		default:
 			return "", errors.New("function called too often")

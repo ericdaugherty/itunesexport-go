@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ Flags:
                                 EXT = M3U Extended, WPL = Windows Playlist, ZPL = Zune Playlist
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
+    -includePlaylistWithRegex   Include all playlists matching the provided regular expression
     -copy <COPY TYPE>           Copy the music tracks as well, according the the COPY TYPE scheme...
         NONE                    (default) The music files will not be copied.	                            
         PLAYLIST                Copies the music into a folder for each playlist.
@@ -50,6 +52,7 @@ var (
 	includeAllPlaylists            bool
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
+	includePlaylistWithRegex       string
 	copyType                       string
 	musicPath                      string
 	musicPathOrig                  string
@@ -69,6 +72,7 @@ func main() {
 	flags.StringVar(&exportType, "type", "M3U", "")
 	flags.BoolVar(&includeAllPlaylists, "includeAll", false, "")
 	flags.BoolVar(&includeAllWithBuiltinPlaylists, "includeAllWithBuiltin", false, "")
+	flags.StringVar(&includePlaylistWithRegex, "includePlaylistWithRegex", "", "")
 	flags.StringVar(&copyType, "copy", "NONE", "")
 	flags.StringVar(&musicPath, "musicPath", "", "")
 	flags.StringVar(&musicPathOrig, "musicPathOrig", "", "")
@@ -194,18 +198,23 @@ func parseCopyType() error {
 
 func parsePlaylists(library *Library) []Playlist {
 	var playlists []Playlist
+
 	if includeAllPlaylists {
-		for _, value := range library.Playlists {
-			if value.DistinguishedKind == 0 && value.Name != "Library" {
-				playlists = append(playlists, value)
+		for _, playlist := range library.Playlists {
+			if playlist.DistinguishedKind == 0 && playlist.Name != "Library" {
+				playlists = append(playlists, playlist)
 			}
 		}
-		exportSettings.Playlists = playlists
 	} else if includeAllWithBuiltinPlaylists {
 		playlists = library.Playlists
-	}
-
-	if len(includePlaylistNames) > 0 {
+	} else if len(includePlaylistWithRegex) > 0 {
+		for _, playlist := range library.Playlists {
+			match, _ := regexp.MatchString(includePlaylistWithRegex, playlist.Name)
+			if match {
+				playlists = append(playlists, playlist)
+			}
+		}
+	} else if len(includePlaylistNames) > 0 {
 		for _, playlistName := range includePlaylistNames {
 			playlist, ok := library.PlaylistMap[playlistName]
 			if ok {
@@ -213,8 +222,8 @@ func parsePlaylists(library *Library) []Playlist {
 			} else {
 				fmt.Printf("Unable to find matching playlist for name: %q. Skipping Playlist.\n", playlistName)
 			}
-
 		}
 	}
+
 	return playlists
 }
