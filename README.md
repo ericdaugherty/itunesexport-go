@@ -13,7 +13,7 @@ go build
 ## Usage
 
 ```
-usage: itunesexport [<flags>] [include <playlist name>...]
+usage: %v [<flags>] [include <playlist name>...] [exclude <playlist name>...]
 
 Flags:
     -library <file path>        Path to iTunes Music Library XML File.
@@ -22,11 +22,12 @@ Flags:
                                 EXT = M3U Extended, WPL = Windows Playlist, ZPL = Zune Playlist
     -includeAll                 Include all user defined playlists.
     -includeAllWithBuiltin      Include All playlists, including iTunes defined playlists
+    -includePlaylistWithRegex   Include all playlists matching the provided regular expression
     -copy <COPY TYPE>           Copy the music tracks as well, according the the COPY TYPE scheme...
         NONE                    (default) The music files will not be copied.                               
         PLAYLIST                Copies the music into a folder for each playlist.
         ITUNES                  Copies using the itunes music/<Artist>/<Album>/<Track> structure.
         FLAT                    Copies all the music into the output folder.
     -musicPath <new path>       Base path to the music files. This will override the Music Folder path from iTunes.
-	-musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
+    -musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
 ```

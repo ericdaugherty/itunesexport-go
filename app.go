@@ -13,8 +13,14 @@ import (
 )
 
 const (
-	UsageMessage = `usage: %v [<flags>] [include <playlist name>...]
-	
+	UsageMessage = `usage: %v [<flags>] [include <playlist name>...] [exclude <playlist name>...]
+
+Specify one of the -include<All|AllWithBuiltin|PlaylistWithRegex> flags or use 
+the include parameter with playlist names to specify the playlist to export.
+
+Usage of exclude parameter will override any playlist included using the flag 
+or parameter.
+
 Flags:
     -library <file path>        Path to iTunes Music Library XML File.
     -output <file path>         Path where the playlists should be written.
@@ -36,6 +42,7 @@ Flags:
 `
 	ModeUnknown = 0
 	ModeInclude = 1
+	ModeExclude = 2
 )
 
 // compile passing -ldflags "-X main.Build <build number>"
@@ -53,6 +60,7 @@ var (
 	includeAllWithBuiltinPlaylists bool
 	includePlaylistNames           []string
 	includePlaylistWithRegex       string
+	excludePlaylistNames           []string
 	copyType                       string
 	musicPath                      string
 	musicPathOrig                  string
@@ -62,7 +70,7 @@ var (
 
 func main() {
 
-	fmt.Printf("\niTunes Export (Go Version %v)\nSee http://www.ericdaugherty.com/dev/itunesexport/ for detailed usage instructions.\n\n", Version)
+	fmt.Printf("\niTunes Export (Go Version %v)\nSee http://www.ericdaugherty.com/dev/itunesexport/ for detailed instructions.\n\n", Version)
 
 	flags := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flags.SetOutput(ioutil.Discard)
@@ -100,6 +108,8 @@ func main() {
 		switch flagValue {
 		case "include":
 			mode = ModeInclude
+		case "exclude":
+			mode = ModeExclude
 		default:
 			switch mode {
 			case ModeUnknown:
@@ -107,6 +117,8 @@ func main() {
 				commandLineErrorMessage = fmt.Sprintf("Unexpected paramter %v\n", flagValue)
 			case ModeInclude:
 				includePlaylistNames = append(includePlaylistNames, flagValue)
+			case ModeExclude:
+				excludePlaylistNames = append(excludePlaylistNames, flagValue)
 			}
 		}
 	}
@@ -125,6 +137,8 @@ func main() {
 		}
 	}
 	libraryPath = filepath.Clean(libraryPath)
+
+	fmt.Printf("Include: %v, Exclude %v", includePlaylistNames, excludePlaylistNames)
 
 	fmt.Println("Loading Library:", libraryPath)
 	library, err := LoadLibrary(libraryPath)
@@ -225,5 +239,20 @@ func parsePlaylists(library *Library) []Playlist {
 		}
 	}
 
-	return playlists
+	var filteredPlaylists []Playlist
+	for _, playlist := range playlists {
+		remove := false
+		for _, removePlaylistName := range excludePlaylistNames {
+			if playlist.Name == removePlaylistName {
+				remove = true
+				break
+			}
+		}
+		if !remove {
+			filteredPlaylists = append(filteredPlaylists, playlist)
+		}
+	}
+
+	return filteredPlaylists
+
 }

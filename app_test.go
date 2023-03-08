@@ -21,7 +21,7 @@ func TestIncludeAllPlaylists(t *testing.T) {
 	if len(playlists) != 2 {
 		t.Fatal("wrong playlist size")
 	}
-	if ! (playlists[0].Name == "Foo" &&  playlists[1].Name == "Bar") {
+	if !(playlists[0].Name == "Foo" && playlists[1].Name == "Bar") {
 		t.Fatal("Unexpected playlist names")
 	}
 }
@@ -65,7 +65,7 @@ func TestIncludePlaylistNames(t *testing.T) {
 
 func TestPlaylistViaRegex(t *testing.T) {
 	resetGlobalVars()
-	
+
 	library := &Library{
 		Playlists: []Playlist{
 			{Name: "Foo"},
@@ -85,6 +85,28 @@ func TestPlaylistViaRegex(t *testing.T) {
 	}
 }
 
+func TestExcludePlaylists(t *testing.T) {
+	resetGlobalVars()
+
+	library := &Library{
+		Playlists: []Playlist{
+			{Name: "Foo"},
+			{Name: "Bar"},
+			{Name: "Library", DistinguishedKind: 0},
+		},
+	}
+
+	includeAllPlaylists = true
+	excludePlaylistNames = []string{"Bar"}
+	playlists := parsePlaylists(library)
+
+	if len(playlists) != 1 {
+		t.Fatal("wrong playlist size")
+	}
+	if !(playlists[0].Name == "Foo") {
+		t.Fatal("Unexpected playlist names")
+	}
+}
 
 func resetGlobalVars() {
 	includeAllPlaylists = false
