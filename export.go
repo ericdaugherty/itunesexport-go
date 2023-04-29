@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"regexp"
 )
 
 const (
@@ -44,14 +43,22 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 	start := time.Now()
 
 	for _, playlist := range exportSettings.Playlists {
+		// Skip Folders
+		if playlist.Folder {
+			continue
+		}
 		fmt.Printf("Exporting Playlist %v\n", playlist.Name)
 
-		// Prevent illegal characters in playlist filenames
-		illegalChars := regexp.MustCompile(`[*?<>|]`)
-		safePlaylistName := illegalChars.ReplaceAllString(playlist.Name, "_")
-		safePlaylistName = strings.Replace(safePlaylistName, ":", " - ", -1)
+		filePath := ""
+		if includeFolders && playlist.ParentPersistentId != "" {
+			filePath = buildPlaylistPath(playlist, library)
+		}
 
-		fileName := filepath.Join(exportSettings.OutputPath, safePlaylistName+"."+exportSettings.Extension)
+		if filePath != "" {
+			os.MkdirAll(filepath.Join(exportSettings.OutputPath, filePath), 0777)
+		}
+
+		fileName := filepath.Join(exportSettings.OutputPath, filePath, playlist.SafeName()+"."+exportSettings.Extension)
 
 		file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
@@ -87,7 +94,7 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 			sourceFileLocation, errParse := url.QueryUnescape(track.Location)
 			sourceFileLocation = trimTrackLocationPrefix(sourceFileLocation)
 
-			destFileLocation, err := copyTrack(exportSettings, &playlist, &track, sourceFileLocation)
+			destFileLocation, err := copyTrack(library, exportSettings, &playlist, &track, sourceFileLocation)
 			if err != nil {
 				fmt.Printf("Unable to copy file %v: %v\n", sourceFileLocation, err.Error())
 				continue
@@ -119,11 +126,15 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 
 // copyTrack copies a file from the provided sourceFileLocation to another location. The new location
 // depends on the CopyType selected in exportSettings. If COPY_NONE is selected, the sourceFileLocation is returned.
-func copyTrack(exportSettings *ExportSettings, playlist *Playlist, track *Track, sourceFileLocation string) (string, error) {
+func copyTrack(library *Library, exportSettings *ExportSettings, playlist *Playlist, track *Track, sourceFileLocation string) (string, error) {
 	var destinationPath string
 	switch exportSettings.CopyType {
 	case COPY_PLAYLIST:
-		destinationPath = filepath.Join(exportSettings.OutputPath, playlist.Name)
+		filePath := ""
+		if includeFolders && playlist.ParentPersistentId != "" {
+			filePath = buildPlaylistPath(*playlist, library)
+		}
+		destinationPath = filepath.Join(exportSettings.OutputPath, filePath, playlist.SafeName())
 	case COPY_ITUNES:
 		destinationPath = filepath.Join(exportSettings.OutputPath, track.Artist, track.Album)
 	case COPY_FLAT:
@@ -145,13 +156,14 @@ func copyTrack(exportSettings *ExportSettings, playlist *Playlist, track *Track,
 }
 
 func copyFile(src, dest string) error {
+	src = strings.Replace(src, "file://", "", 1)
 	sourceFileInfo, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
 
 	if !sourceFileInfo.Mode().IsRegular() {
-		return errors.New("source file is not a regular file.")
+		return errors.New("source file is not a regular file")
 	}
 
 	_, err = os.Stat(dest)
@@ -195,4 +207,25 @@ func copyFileData(src, dest string) error {
 		return err
 	}
 	return out.Sync()
+}
+
+// buildPlaylistPath checks to see if the playlist has any parent folders.
+// If so, it returns the full path of those folders.
+func buildPlaylistPath(playlist Playlist, library *Library) string {
+	if playlist.ParentPersistentId == "" {
+		if playlist.Folder {
+			return playlist.SafeName()
+		}
+		return ""
+	}
+
+	parent, ok := library.PlaylistIdMap[playlist.ParentPersistentId]
+	if !ok {
+		return ""
+	}
+	pathSeg := ""
+	if playlist.Folder {
+		pathSeg = playlist.SafeName()
+	}
+	return filepath.Join(buildPlaylistPath(parent, library), pathSeg)
 }

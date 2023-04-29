@@ -2,11 +2,15 @@ package main
 
 import (
 	"os"
+	"regexp"
 	"strconv"
 	"time"
 
 	plist "howett.net/plist"
 )
+
+// Prevent illegal characters in playlist filenames
+var illegalChars = regexp.MustCompile(`[\[\]\\:/*?<>|]`)
 
 type Library struct {
 	MajorVersion        int `plist:"Major Version"`
@@ -20,6 +24,7 @@ type Library struct {
 	Tracks              map[string]Track
 	Playlists           []Playlist
 	PlaylistMap         map[string]Playlist
+	PlaylistIdMap       map[string]Playlist
 }
 
 type Track struct {
@@ -76,12 +81,18 @@ type Playlist struct {
 	Master               bool
 	PlaylistId           int    `plist:"Playlist ID"`
 	PlaylistPersistentId string `plist:"Playlist Persistent ID"`
+	ParentPersistentId   string `plist:"Parent Persistent ID"`
 	DistinguishedKind    int    `plist:"Distinguished Kind"`
 	Visible              bool
 	AllItems             bool           `plist:"All Items"`
+	Folder               bool           `plist:"Folder"`
 	SmartInfo            []byte         `plist:"Smart Info"`
 	SmartCriteria        []byte         `plist:"Smart Criteria"`
 	PlaylistItems        []PlaylistItem `plist:"Playlist Items"`
+}
+
+func (p Playlist) SafeName() string {
+	return illegalChars.ReplaceAllString(p.Name, "_")
 }
 
 type PlaylistItem struct {
@@ -107,8 +118,10 @@ func LoadLibrary(fileLocation string) (*Library, error) {
 	}
 
 	library.PlaylistMap = make(map[string]Playlist)
+	library.PlaylistIdMap = make(map[string]Playlist)
 	for _, value := range library.Playlists {
 		library.PlaylistMap[value.Name] = value
+		library.PlaylistIdMap[value.PlaylistPersistentId] = value
 	}
 
 	return &library, nil

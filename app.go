@@ -36,6 +36,7 @@ Flags:
         FLAT                    Copies all the music into the output folder.
     -musicPath <new path>       Base path to the music files. This will override the Music Folder path from iTunes.
 	-musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
+	-includeFolders             Playlists within folders will include the full path in the name.
 `
 	UsageErrorMessage = `Unable to parse command line parameters.
 %v
@@ -64,6 +65,7 @@ var (
 	copyType                       string
 	musicPath                      string
 	musicPathOrig                  string
+	includeFolders                 bool
 
 	exportSettings ExportSettings
 )
@@ -84,6 +86,7 @@ func main() {
 	flags.StringVar(&copyType, "copy", "NONE", "")
 	flags.StringVar(&musicPath, "musicPath", "", "")
 	flags.StringVar(&musicPathOrig, "musicPathOrig", "", "")
+	flags.BoolVar(&includeFolders, "includeFolders", false, "")
 
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
@@ -138,7 +141,7 @@ func main() {
 	}
 	libraryPath = filepath.Clean(libraryPath)
 
-	fmt.Printf("Include: %v, Exclude %v", includePlaylistNames, excludePlaylistNames)
+	fmt.Printf("Include: %v, Exclude %v ", includePlaylistNames, excludePlaylistNames)
 
 	fmt.Println("Loading Library:", libraryPath)
 	library, err := LoadLibrary(libraryPath)
