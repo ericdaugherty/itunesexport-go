@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+   <key>Major Version</key><integer>1</integer>
+   <key>Minor Version</key><integer>1</integer>
+   <key>Application Version</key><string>12.9.5.5</string>
+   <key>Features</key><integer>5</integer>
+   <key>Show Content Ratings</key><true/>
+   <key>Music Folder</key><string>file:///C:/Music/</string>
+   <key>Library Persistent ID</key><string>B2D6FEB2EEC0681C</string>
+   <key>Tracks</key>
+   <dict>
+       <key>1</key>
+       <dict>
+           <key>Track ID</key><integer>1</integer>
+           <key>Name</key><string>Some Song</string>
+           <key>Artist</key><string>Some Artist</string>
+           <key>Kind</key><string>MPEG audio file</string>
+           <key>Size</key><integer>1234567</integer>
+           <key>Total Time</key><integer>210000</integer>
+           <key>Date Modified</key><date>2023-04-01T12:00:00Z</date>
+           <key>Date Added</key><date>2023-04-01T12:00:00Z</date>
+           <key>Bit Rate</key><integer>320</integer>
+           <key>Sample Rate</key><integer>44100</integer>
+           <key>Persistent ID</key><string>9E1A8F0D3B6E7A83</string>
+           <key>Track Type</key><string>File</string>
+           <key>Location</key><string>REPLACE_ME_EXAMPLE_SONG_LOCATION</string>
+           <key>File Folder Count</key><integer>4</integer>
+           <key>Library Folder Count</key><integer>1</integer>
+       </dict>
+   </dict>
+   <key>Playlists</key>
+   <array>
+       <dict>
+           <key>Name</key><string>My Playlist</string>
+           <key>Playlist ID</key><integer>2</integer>
+           <key>Playlist Persistent ID</key><string>BA9D3C2EAB361B84</string>
+           <key>All Items</key><true/>
+           <key>Playlist Items</key>
+           <array>
+               <dict>
+                   <key>Track ID</key><integer>1</integer>
+               </dict>
+           </array>
+       </dict>
+   </array>
+</dict>
+</plist>
