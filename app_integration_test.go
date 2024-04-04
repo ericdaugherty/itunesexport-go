@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,57 +11,24 @@ import (
 	"time"
 )
 
-// TestExportPlaylists tests the main functionality with a given XML library file.
 func TestExportPlaylists(t *testing.T) {
-	// Create a temporary directory to serve as the output directory.
-	outputDir, err := ioutil.TempDir("", "itunes_test_output")
-	if err != nil {
-		t.Fatalf("Failed to create temporary output directory: %v", err)
-	}
-	defer os.RemoveAll(outputDir) // Clean up after the test.
+	// arrange
+	outputDir := createTempDir(t, "itunes-exporter-test")
+	defer os.RemoveAll(outputDir)
 
-	// Create a temporary empty file to simulate the music file.
-	musicFile, err := ioutil.TempFile("", "Some_Song_*.mp3")
-	if err != nil {
-		t.Fatalf("Failed to create temporary music file: %v", err)
-	}
-	defer os.Remove(musicFile.Name()) // Clean up after the test.
+	musicFile := createTempFile(t, "Some_Song_*.mp3")
+	defer os.Remove(musicFile)
+	
+	uniqueContent := currentUnixNano()
+	// write some unique data to the original music file to later check if the copy was successful
+	writeFile(t, musicFile, uniqueContent)
+	
+	// make sure we have a path only containing "/" as separators
+	musicFilePath := filepath.ToSlash(musicFile)
+	itunesDbFile := prepareItunesDbFile(t, musicFilePath)
+	defer os.Remove(itunesDbFile)
 
-	currentTimeNano := time.Now().UnixNano()
-	unixNanoStr := strconv.FormatInt(currentTimeNano, 10)
-
-	// Write the Unix nanoseconds string to the music file.
-	err = ioutil.WriteFile(musicFile.Name(), []byte(unixNanoStr), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write Unix nanoseconds to music file: %v", err)
-	}
-
-	// Read the XML content from the fixture file.
-	xmlContent, err := ioutil.ReadFile("fixture/example-itunes-db.xml")
-	if err != nil {
-		t.Fatalf("Failed to read fixture XML file: %v", err)
-	}
-
-	// Adjust the XML content to point to the temporary music file's location.
-	musicFilePath := filepath.ToSlash(musicFile.Name())
-	xmlContentAdjusted := strings.ReplaceAll(string(xmlContent), "REPLACE_ME_EXAMPLE_SONG_LOCATION", "file://"+musicFilePath)
-
-	// Write the adjusted XML content to a new temporary fixture file.
-	fixtureFile, err := ioutil.TempFile("", "testItunesDb_*.xml")
-	if err != nil {
-		t.Fatalf("Failed to create temporary fixture XML file: %v", err)
-	}
-	defer os.Remove(fixtureFile.Name()) // Clean up after the test.
-
-	_, err = fixtureFile.WriteString(xmlContentAdjusted)
-	if err != nil {
-		t.Fatalf("Failed to write to temporary fixture XML file: %v", err)
-	}
-
-	// Close the file to ensure all writes are flushed to disk.
-	if err := fixtureFile.Close(); err != nil {
-		t.Fatalf("Failed to close temporary fixture XML file: %v", err)
-	}
+	// act
 
 	// Save the real os.Args and defer the restoration.
 	realArgs := os.Args
@@ -70,58 +37,97 @@ func TestExportPlaylists(t *testing.T) {
 	// Set the necessary parameters to simulate command line arguments.
 	os.Args = []string{
 		"itunesexport", // The program name (os.Args[0]).
-		"-library", fixtureFile.Name(),
+		"-library", itunesDbFile,
 		"-output", outputDir,
 		"-type", "M3U",
 		"-includeAll",
 		"-copy", "PLAYLIST",
 	}
-
-	// Run the main program to test the functionality.
 	main()
 
-	expectedPlaylistPath := filepath.Join(outputPath, "My Playlist")
+	// assert
+	expectedPlaylistDir := filepath.Join(outputDir, "My Playlist")
+	assertPathExists(t, expectedPlaylistDir)
 
-	// if expectedPlaylistPath != destinationPath {
-	// 	t.Fatalf("destination path '%s' not identical to expected path '%s'", destinationPath, expectedPlaylistPath)
-	// }
+	expectedCopiedMusicFilePath := filepath.Join(expectedPlaylistDir, filepath.Base(musicFilePath))
+	assertPathExists(t, expectedCopiedMusicFilePath)
 
-	if !pathExists(expectedPlaylistPath) {
-		t.Fatalf("File can't be found at destination path: %s", expectedPlaylistPath)
+	copiedMusicFileContent := readFile(t, expectedCopiedMusicFilePath)
+	if copiedMusicFileContent != uniqueContent {
+		t.Errorf("Content of copied file not as expected. Expected: %s, Got: %s", uniqueContent, copiedMusicFileContent)
 	}
 
-	musicFileName := filepath.Base(musicFilePath)
-	expectedMusicFilePath := filepath.Join(expectedPlaylistPath, musicFileName)
-	if !pathExists(expectedMusicFilePath) {
-		t.Fatalf("File can't be found at destination path: %s", expectedMusicFilePath)
-	}
+	expectedPlaylistFilePath := filepath.Join(outputDir, "My Playlist.m3u")
+	assertPlaylistFileCorrectlyWritten(t, expectedPlaylistFilePath, expectedCopiedMusicFilePath)
+}
 
-	musicFileContents, err := ioutil.ReadFile(musicFilePath)
+func assertPathExists(t *testing.T, path string) {
+	_, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("File '%s' does not exist: %v", path, err)
+	}
+}
+
+func createTempFile(t *testing.T, pattern string) string {
+	tmpFile, err := os.CreateTemp("", pattern)
 	if err != nil {
-		t.Fatalf("Failed to read music file: %v", err)
+		t.Fatal(err)
 	}
+	return tmpFile.Name()
+}
 
-	// Assert that the music file contains the Unix nanoseconds string.
-	if string(musicFileContents) != unixNanoStr {
-		t.Errorf("The music file does not contain the expected Unix nanoseconds string. Expected: %s, Got: %s", unixNanoStr, string(musicFileContents))
-	}
-
-	playlistFilePath := filepath.Join(outputDir, "My Playlist.m3u")
-
-	// Read the contents of the "My Playlist.m3u" file.
-	playlistFileContents, err := ioutil.ReadFile(playlistFilePath)
+func createTempDir(t *testing.T, pattern string) string {
+	tmpDirPath, err := os.MkdirTemp("", pattern)
 	if err != nil {
-		t.Fatalf("Failed to read playlist file: %v", err)
+		t.Fatal(err)
 	}
+	return tmpDirPath
+}
 
-	pattern := "\r?\n" + regexp.QuoteMeta(expectedMusicFilePath) + "\r?\n"
-	re := regexp.MustCompile(pattern)
+func writeFile(t *testing.T, filePath string, content string) {
+	err := os.WriteFile(filePath, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write '%s' to file '%s': %v", content, filePath, err)
+	}
+}
 
-	// Find all matches of the pattern in the playlist file contents.
+func readFile(t *testing.T, filePath string) string {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("Failed to read file '%s': %v", filePath, err)
+	}
+	return string(content)
+}
+
+func currentUnixNano() string {
+	currentTimeNano := time.Now().UnixNano()
+	return strconv.FormatInt(currentTimeNano, 10)
+}
+
+func prepareItunesDbFile(t *testing.T, musicFilePath string) string {
+	itunesDbContent := readFile(t, "fixture/example-itunes-db.xml")
+	itunesDbContentAdjusted := strings.ReplaceAll(string(itunesDbContent), "REPLACE_ME_EXAMPLE_SONG_LOCATION", "file://"+musicFilePath)
+
+	itunesDbFile := createTempFile(t, "testItunesDb_*.xml")
+	writeFile(t, itunesDbFile, itunesDbContentAdjusted)
+
+	return itunesDbFile
+}
+
+func assertPlaylistFileCorrectlyWritten(t *testing.T, playlistPath string, singleLineContent string) {
+	assertPathExists(t, playlistPath)
+
+	playlistFileContents := readFile(t, playlistPath)
+	re := buildStringOnSingleLineRegex(singleLineContent)
 	matches := re.FindAllString(string(playlistFileContents), -1)
 
-	// Assert that there is exactly one match.
 	if len(matches) != 1 {
-		t.Errorf("Expected exactly one line with the music file path, but found %d", len(matches))
+		t.Errorf("Expected playlist to contain '%s' exactly once, but found %d", singleLineContent, len(matches))
 	}
+}
+
+// e.g. ...\n/path/to/file.mp3\n
+func buildStringOnSingleLineRegex(s string) *regexp.Regexp {
+	pattern := "\r?\n" + regexp.QuoteMeta(s) + "\r?\n"
+	return regexp.MustCompile(pattern)
 }
