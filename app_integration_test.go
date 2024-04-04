@@ -61,6 +61,62 @@ func TestExportPlaylists(t *testing.T) {
 	assertPlaylistFileCorrectlyWritten(t, expectedPlaylistFilePath, expectedCopiedMusicFilePath)
 }
 
+
+func TestExportPlaylistsWithAdjustedMusicPath(t *testing.T) {
+	// arrange
+	outputDir := createTempDir(t, "itunes-exporter-test")
+	defer os.RemoveAll(outputDir)
+
+	originalMusicFile := createTempFile(t, "Some_Song_*.mp3")
+	defer os.Remove(originalMusicFile)
+
+	uniqueContent := currentUnixNano()
+	// write some unique data to the original music file to later check if the copy was successful
+	writeFile(t, originalMusicFile, uniqueContent)
+
+	originalMusicFileDir := filepath.Dir(originalMusicFile)
+	originalMusicName := filepath.Base(originalMusicFile)
+	invalidMusicFilePath := filepath.ToSlash(filepath.Join("/invalid", "path", originalMusicName))
+		
+	itunesDbFile := prepareItunesDbFile(t, invalidMusicFilePath)
+	defer os.Remove(itunesDbFile)
+
+	// act
+
+	// Save the real os.Args and defer the restoration.
+	realArgs := os.Args
+	defer func() { os.Args = realArgs }()
+
+	// Set the necessary parameters to simulate command line arguments.
+	os.Args = []string{
+		"itunesexport", // The program name (os.Args[0]).
+		"-library", itunesDbFile,
+		"-output", outputDir,
+		"-type", "M3U",
+		"-includeAll",
+		"-copy", "PLAYLIST",
+		"-musicPath", originalMusicFileDir,
+		"-musicPathOrig", "/invalid/path",
+	}
+	main()
+
+	// assert
+	expectedPlaylistDir := filepath.Join(outputDir, "My Playlist")
+	assertPathExists(t, expectedPlaylistDir)
+
+	expectedCopiedMusicFilePath := filepath.Join(expectedPlaylistDir, originalMusicName)
+	assertPathExists(t, expectedCopiedMusicFilePath)
+
+	copiedMusicFileContent := readFile(t, expectedCopiedMusicFilePath)
+	if copiedMusicFileContent != uniqueContent {
+		t.Errorf("Content of copied file not as expected. Expected: %s, Got: %s", uniqueContent, copiedMusicFileContent)
+	}
+
+	expectedPlaylistFilePath := filepath.Join(outputDir, "My Playlist.m3u")
+	assertPlaylistFileCorrectlyWritten(t, expectedPlaylistFilePath, expectedCopiedMusicFilePath)
+}
+
+
 func assertPathExists(t *testing.T, path string) {
 	_, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
