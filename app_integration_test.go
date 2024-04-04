@@ -5,24 +5,20 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
+
+const FileContent string = "42"
 
 func TestExportPlaylists(t *testing.T) {
 	// arrange
 	outputDir := createTempDir(t, "itunes-exporter-test")
 	defer os.RemoveAll(outputDir)
 
-	musicFile := createTempFile(t, "Some_Song_*.mp3")
+	musicFile, musicFileName := prepareMusicFile(t)
 	defer os.Remove(musicFile)
-	
-	uniqueContent := currentUnixNano()
-	// write some unique data to the original music file to later check if the copy was successful
-	writeFile(t, musicFile, uniqueContent)
-	
+
 	// make sure we have a path only containing "/" as separators
 	musicFilePath := filepath.ToSlash(musicFile)
 	itunesDbFile := prepareItunesDbFile(t, musicFilePath)
@@ -46,38 +42,20 @@ func TestExportPlaylists(t *testing.T) {
 	main()
 
 	// assert
-	expectedPlaylistDir := filepath.Join(outputDir, "My Playlist")
-	assertPathExists(t, expectedPlaylistDir)
-
-	expectedCopiedMusicFilePath := filepath.Join(expectedPlaylistDir, filepath.Base(musicFilePath))
-	assertPathExists(t, expectedCopiedMusicFilePath)
-
-	copiedMusicFileContent := readFile(t, expectedCopiedMusicFilePath)
-	if copiedMusicFileContent != uniqueContent {
-		t.Errorf("Content of copied file not as expected. Expected: %s, Got: %s", uniqueContent, copiedMusicFileContent)
-	}
-
-	expectedPlaylistFilePath := filepath.Join(outputDir, "My Playlist.m3u")
-	assertPlaylistFileCorrectlyWritten(t, expectedPlaylistFilePath, expectedCopiedMusicFilePath)
+	assertPlaylistExportedSuccessfully(t, outputDir, musicFileName)
 }
-
 
 func TestExportPlaylistsWithAdjustedMusicPath(t *testing.T) {
 	// arrange
 	outputDir := createTempDir(t, "itunes-exporter-test")
 	defer os.RemoveAll(outputDir)
 
-	originalMusicFile := createTempFile(t, "Some_Song_*.mp3")
-	defer os.Remove(originalMusicFile)
+	musicFile, musicFileName := prepareMusicFile(t)
+	defer os.Remove(musicFile)
 
-	uniqueContent := currentUnixNano()
-	// write some unique data to the original music file to later check if the copy was successful
-	writeFile(t, originalMusicFile, uniqueContent)
+	musicFileDir := filepath.Dir(musicFile)
+	invalidMusicFilePath := filepath.ToSlash(filepath.Join("/invalid", "path", musicFileName))
 
-	originalMusicFileDir := filepath.Dir(originalMusicFile)
-	originalMusicName := filepath.Base(originalMusicFile)
-	invalidMusicFilePath := filepath.ToSlash(filepath.Join("/invalid", "path", originalMusicName))
-		
 	itunesDbFile := prepareItunesDbFile(t, invalidMusicFilePath)
 	defer os.Remove(itunesDbFile)
 
@@ -95,27 +73,14 @@ func TestExportPlaylistsWithAdjustedMusicPath(t *testing.T) {
 		"-type", "M3U",
 		"-includeAll",
 		"-copy", "PLAYLIST",
-		"-musicPath", originalMusicFileDir,
+		"-musicPath", musicFileDir,   // new music path should be the old/ correct one
 		"-musicPathOrig", "/invalid/path",
 	}
 	main()
 
 	// assert
-	expectedPlaylistDir := filepath.Join(outputDir, "My Playlist")
-	assertPathExists(t, expectedPlaylistDir)
-
-	expectedCopiedMusicFilePath := filepath.Join(expectedPlaylistDir, originalMusicName)
-	assertPathExists(t, expectedCopiedMusicFilePath)
-
-	copiedMusicFileContent := readFile(t, expectedCopiedMusicFilePath)
-	if copiedMusicFileContent != uniqueContent {
-		t.Errorf("Content of copied file not as expected. Expected: %s, Got: %s", uniqueContent, copiedMusicFileContent)
-	}
-
-	expectedPlaylistFilePath := filepath.Join(outputDir, "My Playlist.m3u")
-	assertPlaylistFileCorrectlyWritten(t, expectedPlaylistFilePath, expectedCopiedMusicFilePath)
+	assertPlaylistExportedSuccessfully(t, outputDir, musicFileName)
 }
-
 
 func assertPathExists(t *testing.T, path string) {
 	_, err := os.Stat(path)
@@ -155,9 +120,10 @@ func readFile(t *testing.T, filePath string) string {
 	return string(content)
 }
 
-func currentUnixNano() string {
-	currentTimeNano := time.Now().UnixNano()
-	return strconv.FormatInt(currentTimeNano, 10)
+func prepareMusicFile(t *testing.T) (string, string) {
+	musicFile := createTempFile(t, "Some_Song_*.mp3")
+	writeFile(t, musicFile, FileContent)
+	return musicFile, filepath.Base(musicFile)
 }
 
 func prepareItunesDbFile(t *testing.T, musicFilePath string) string {
@@ -168,6 +134,22 @@ func prepareItunesDbFile(t *testing.T, musicFilePath string) string {
 	writeFile(t, itunesDbFile, itunesDbContentAdjusted)
 
 	return itunesDbFile
+}
+
+func assertPlaylistExportedSuccessfully(t *testing.T, outputDir string, musicFileName string) {
+	expectedPlaylistDir := filepath.Join(outputDir, "My Playlist")
+	assertPathExists(t, expectedPlaylistDir)
+
+	expectedCopiedMusicFilePath := filepath.Join(expectedPlaylistDir, musicFileName)
+	assertPathExists(t, expectedCopiedMusicFilePath)
+
+	musicFileContent := readFile(t, expectedCopiedMusicFilePath)
+	if musicFileContent != FileContent {
+		t.Errorf("Content of copied file not as expected. Expected: %s, Got: %s", FileContent, musicFileContent)
+	}
+
+	expectedPlaylistFilePath := filepath.Join(outputDir, "My Playlist.m3u")
+	assertPlaylistFileCorrectlyWritten(t, expectedPlaylistFilePath, expectedCopiedMusicFilePath)
 }
 
 func assertPlaylistFileCorrectlyWritten(t *testing.T, playlistPath string, singleLineContent string) {
