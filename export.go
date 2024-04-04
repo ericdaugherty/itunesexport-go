@@ -128,6 +128,11 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 // depends on the CopyType selected in exportSettings. If COPY_NONE is selected, the sourceFileLocation is returned.
 func copyTrack(library *Library, exportSettings *ExportSettings, playlist *Playlist, track *Track, sourceFileLocation string) (string, error) {
 	var destinationPath string
+
+	if exportSettings.NewMusicPath != "" {
+		sourceFileLocation = strings.Replace(sourceFileLocation, exportSettings.OriginalMusicPath, exportSettings.NewMusicPath, 1)
+	}
+
 	switch exportSettings.CopyType {
 	case COPY_PLAYLIST:
 		filePath := ""
@@ -140,9 +145,6 @@ func copyTrack(library *Library, exportSettings *ExportSettings, playlist *Playl
 	case COPY_FLAT:
 		destinationPath = exportSettings.OutputPath
 	case COPY_NONE:
-		if exportSettings.NewMusicPath != "" {
-			return strings.Replace(sourceFileLocation, exportSettings.OriginalMusicPath, exportSettings.NewMusicPath, 1), nil
-		}
 		return sourceFileLocation, nil
 	default:
 		return "", errors.New("unknown copy type")
