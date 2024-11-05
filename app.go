@@ -37,6 +37,8 @@ Flags:
     -musicPath <new path>       Base path to the music files. This will override the Music Folder path from iTunes.
 	-musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
 	-includeFolders             Playlists within folders will include the full path in the name.
+	-pathSeparator <separator>  The character or string to use to separate path elements in the output playlist file.
+	                            If not specified it will use the operating system's default value.
 `
 	UsageErrorMessage = `Unable to parse command line parameters.
 %v
@@ -66,6 +68,7 @@ var (
 	musicPath                      string
 	musicPathOrig                  string
 	includeFolders                 bool
+	pathSeparator                  string
 
 	exportSettings ExportSettings
 )
@@ -87,6 +90,7 @@ func main() {
 	flags.StringVar(&musicPath, "musicPath", "", "")
 	flags.StringVar(&musicPathOrig, "musicPathOrig", "", "")
 	flags.BoolVar(&includeFolders, "includeFolders", false, "")
+	flags.StringVar(&pathSeparator, "pathSeparator", "", "")
 
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
@@ -168,6 +172,11 @@ func main() {
 
 	exportSettings.OutputPath = outputPath
 	exportSettings.Playlists = parsePlaylists(exportSettings.Library)
+
+	exportSettings.PathSeparator = string(filepath.Separator)
+	if len(pathSeparator) > 0 {
+		exportSettings.PathSeparator = pathSeparator
+	}
 
 	fmt.Printf("Exporting %v playlists...\n", len(exportSettings.Playlists))
 	err = ExportPlaylists(&exportSettings, library)

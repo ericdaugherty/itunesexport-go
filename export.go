@@ -37,6 +37,7 @@ type ExportSettings struct {
 	CopyType          int
 	OriginalMusicPath string
 	NewMusicPath      string
+	PathSeparator     string
 }
 
 func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
@@ -105,7 +106,10 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 				continue
 			}
 
-			err = entry(file, exportSettings, &playlist, &track, destFileLocation)
+			// Replace the default path separator with the one specified
+			formattedDest := strings.ReplaceAll(destFileLocation, string(filepath.Separator), exportSettings.PathSeparator)
+
+			err = entry(file, exportSettings, &playlist, &track, formattedDest)
 			if err != nil {
 				return err
 			}
