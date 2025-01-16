@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # build and publish in parallel
         goos: [windows, darwin, linux]
         goarch: [amd64, arm64]
         exclude:
@@ -28,18 +27,8 @@ jobs:
       with:
         go-version: 'stable'
     - name: Build
-      run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v -ldflags "-X main.Version=${{ env.APP_VERSION }}"
-
-
-
-
-    # - uses: wangyoucao577/go-release-action@v1
-    #   with:
-    #     github_token: ${{ secrets.GITHUB_TOKEN }}
-    #     goos: ${{ matrix.goos }}
-    #     goarch: ${{ matrix.goarch }}
-    #     goversion: "latest"
-    #     binary_name: "itunesexport"
-    #     build_flags: -v
-    #     ldflags: -X "main.Version=${{ env.APP_VERSION }}"
-    #     extra_files: README.md
+      run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o itunesexport -v -ldflags "-X main.Version=${{ github.event.release.tag_name }}"
+    - name: Package
+      run: |
+          zip "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip" itunesexport* README.md
+          gh release upload "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}${{ matrix.goarch }}.zip"
