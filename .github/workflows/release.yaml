@@ -27,6 +27,8 @@ jobs:
     - name: Build
       run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o itunesexport -v -ldflags "-X main.Version=${{ github.event.release.tag_name }}"
     - name: Package
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
           zip "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip" itunesexport* README.md
           gh release upload ${{ github.event.release.tag_name }} "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}${{ matrix.goarch }}.zip"
