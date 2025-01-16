@@ -25,7 +25,13 @@ jobs:
       with:
         go-version: 'stable'
     - name: Build
-      run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o itunesexport -v -ldflags "-X main.Version=${{ github.event.release.tag_name }}"
+      run: |
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            OUTPUT_FILE="itunesexport.exe"
+          else
+            OUTPUT_FILE="itunesexport"
+          fi
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o $OUTPUT_FILE -v -ldflags "-X main.Version=${{ github.event.release.tag_name }}"
     - name: Package
       env:
         GH_TOKEN: ${{ github.token }}
