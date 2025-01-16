@@ -3,8 +3,6 @@ name: Release Go Binary
 on:
   release:
     types: [created]
-  push:
-    branches: [ "master" ]
 
 jobs:
   releases-matrix:
@@ -31,4 +29,4 @@ jobs:
     - name: Package
       run: |
           zip "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip" itunesexport* README.md
-          gh release upload "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}${{ matrix.goarch }}.zip"
+          gh release upload ${{ github.event.release.tag_name }} "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}${{ matrix.goarch }}.zip"
