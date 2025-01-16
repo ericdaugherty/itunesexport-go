@@ -31,4 +31,4 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: |
           zip "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip" itunesexport* README.md
-          gh release upload ${{ github.event.release.tag_name }} "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}${{ matrix.goarch }}.zip"
+          gh release upload ${{ github.event.release.tag_name }} "itunesexport-${{ github.event.release.tag_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip"
