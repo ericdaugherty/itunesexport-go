@@ -4,6 +4,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	plist "howett.net/plist"
@@ -122,6 +123,13 @@ func LoadLibrary(fileLocation string) (*Library, error) {
 	for _, value := range library.Playlists {
 		library.PlaylistMap[value.Name] = value
 		library.PlaylistIdMap[value.PlaylistPersistentId] = value
+	}
+
+	// The iTunes library file does not encode the + character correctly in Location
+	//so if we do not escape it here, it will get removed later.
+	for k, v := range library.Tracks {
+		v.Location = strings.ReplaceAll(v.Location, "+", "%2B")
+		library.Tracks[k] = v
 	}
 
 	return &library, nil
