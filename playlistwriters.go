@@ -34,7 +34,7 @@ func extPlaylistWriters() (header playlistWriter, entry trackWriter, footer play
 	const entryString = "#EXTINF:%v,%v - %v\n%v\n"
 
 	header = func(w io.Writer, _ *ExportSettings, _ *Playlist) error {
-		_, err := w.Write([]byte(fmt.Sprintf(headerString)))
+		_, err := w.Write([]byte(fmt.Sprint(headerString)))
 		return err
 	}
 
