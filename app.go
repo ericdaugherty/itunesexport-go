@@ -121,7 +121,7 @@ func main() {
 			switch mode {
 			case ModeUnknown:
 				commandLineError = true
-				commandLineErrorMessage = fmt.Sprintf("Unexpected paramter %v\n", flagValue)
+				commandLineErrorMessage = fmt.Sprintf("Unexpected parameter %v\n", flagValue)
 			case ModeInclude:
 				includePlaylistNames = append(includePlaylistNames, flagValue)
 			case ModeExclude:
