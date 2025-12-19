@@ -30,4 +30,8 @@ Flags:
         FLAT                    Copies all the music into the output folder.
     -musicPath <new path>       Base path to the music files. This will override the Music Folder path from iTunes.
     -musicPathOrig <path>       When using -musicPath this allows you to override the Music Folder value that is replaced.
+    -includeFolders             Playlists within folders will include the full path in the name.
+    -pathSeparator <separator>  The character or string to use to separate path elements in the output playlist file.
+                                If not specified it will use the operating system's default value.
+    -flags                      Output the command line flags provided.
 ```
