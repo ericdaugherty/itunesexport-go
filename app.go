@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -39,6 +39,7 @@ Flags:
 	-includeFolders             Playlists within folders will include the full path in the name.
 	-pathSeparator <separator>  The character or string to use to separate path elements in the output playlist file.
 	                            If not specified it will use the operating system's default value.
+	-flags                      Output the command line flags provided.
 `
 	UsageErrorMessage = `Unable to parse command line parameters.
 %v
@@ -69,6 +70,7 @@ var (
 	musicPathOrig                  string
 	includeFolders                 bool
 	pathSeparator                  string
+	flagDebug                      bool
 
 	exportSettings ExportSettings
 )
@@ -78,7 +80,7 @@ func main() {
 	fmt.Printf("\niTunes Export (Go Version %v)\nSee http://www.ericdaugherty.com/dev/itunesexport/ for detailed instructions.\n\n", Version)
 
 	flags := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flags.SetOutput(ioutil.Discard)
+	flags.SetOutput(io.Discard)
 
 	flags.StringVar(&libraryPath, "library", "", "")
 	flags.StringVar(&outputPath, "output", "", "")
@@ -91,11 +93,30 @@ func main() {
 	flags.StringVar(&musicPathOrig, "musicPathOrig", "", "")
 	flags.BoolVar(&includeFolders, "includeFolders", false, "")
 	flags.StringVar(&pathSeparator, "pathSeparator", "", "")
+	flags.BoolVar(&flagDebug, "flags", false, "")
 
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
 		commandLineError = true
 		commandLineErrorMessage = err.Error()
+	}
+
+	if flagDebug {
+		fmt.Printf("Arguments: %v\n", os.Args[1:])
+		fmt.Printf(`
+Library Path: '%s'
+Output Path: '%s'
+Export Type: '%s'
+Include All Playlists: '%v'
+Include All With Builtin Playlists: '%v'
+Include Playlist With Regex: '%s'
+Copy Type: '%s'
+Music Path: '%s'
+Music Path Original: '%s'
+Include Folders: '%v'
+Path Separator: '%s'
+`, libraryPath, outputPath, exportType, includeAllPlaylists, includeAllWithBuiltinPlaylists,
+			includePlaylistWithRegex, copyType, musicPath, musicPathOrig, includeFolders, pathSeparator)
 	}
 
 	err = parseExportType()
