@@ -106,8 +106,10 @@ func ExportPlaylists(exportSettings *ExportSettings, library *Library) error {
 				continue
 			}
 
-			// Replace the default path separator with the one specified
-			formattedDest := strings.ReplaceAll(destFileLocation, string(filepath.Separator), exportSettings.PathSeparator)
+			// Replace the default path separator with the one specified.
+			// The XML file always uses / even on Windows, so we don't need to use filepath.Separator here.
+			// here as that would not work correctly on Windows.
+			formattedDest := strings.ReplaceAll(destFileLocation, "/", exportSettings.PathSeparator)
 
 			err = entry(file, exportSettings, &playlist, &track, formattedDest)
 			if err != nil {
